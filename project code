@@ -1,0 +1,109 @@
+from keras.models import Sequential
+from keras.layers import Dense,Flatten,Dropout
+from keras.layers import Convolution2D,MaxPooling2D
+import cv2,numpy as np
+from keras.models import load_model
+import glob
+from keras import optimizers
+
+#training set images should be separated as folders of their corres output
+def create_cnn(model_path=None):
+    #initialization
+    classifier=Sequential()
+    
+    #Convolution
+    classifier.add(Convolution2D(32,3,3,input_shape=(64,64,3),activation='relu'))
+
+    #Pooling
+    classifier.add(MaxPooling2D(pool_size=(2,2)))
+    #Dropout
+    classifier.add(Dropout(0.5))
+    #Adding 2nd conv. layaer
+    classifier.add(Convolution2D(32,3,3,activation='relu'))
+    classifier.add(MaxPooling2D(pool_size=(2,2)))
+    classifier.add(Dropout(0.5))
+    
+    classifier.add(Convolution2D(64,3,3,activation='relu'))
+    classifier.add(MaxPooling2D(pool_size=(2,2)))
+    classifier.add(Dropout(0.5))
+    
+    #Flattening
+    classifier.add(Flatten())
+
+    #Full Connected Layers
+    classifier.add(Dense(output_dim=128,activation='relu'))
+    classifier.add(Dropout(0.5))
+    classifier.add(Dense(output_dim=128,activation='relu'))
+    classifier.add(Dropout(0.5))
+    classifier.add(Dense(output_dim=1,activation='sigmoid'))
+
+    #compliling CNN important to remem loss fun and optimizer
+    classifier.compile(optimizer=optimizers.RMSprop(lr=0.0004),loss='categorical_crossentropy',metrics=['accuracy'])
+
+    #Fitting CNN to Images
+    from keras.preprocessing.image import ImageDataGenerator
+    train_datagen = ImageDataGenerator(
+        rescale=1./255,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True)
+
+    test_datagen = ImageDataGenerator(rescale=1./255)
+
+    training_set = train_datagen.flow_from_directory(
+        'C:\\Users\\Satya Karuturi\\Documents\\GitHub\\elpv-dataset\\images',
+        target_size=(64, 64),
+        batch_size=32,
+        class_mode='categorical')
+    
+    test_set = test_datagen.flow_from_directory(
+        'C:\\Users\\Satya Karuturi\\Documents\\GitHub\\elpv-dataset\\images',
+        target_size=(64,64),
+        batch_size=32,
+        class_mode='categorical')
+
+    classifier.fit_generator(
+        training_set,
+        steps_per_epoch=8000,
+        epochs=35,
+        validation_data=test_set,
+        validation_steps=2000)
+
+    #saving the model with this name
+    classifier.save('classifier.h5')
+    
+    if model_path:
+        model=load_model('classifier.h5')
+    
+    return model
+
+if __name__ == "__main__":
+    #Opening the image for prediction
+    file_path='C:\\Users\\Satya Karuturi\\Documents\\GitHub\\elpv-dataset\\Im2\\cell0005.png',
+    im=cv2.resize(cv2.imread(file_path),(64,64)).astype(np.float32)
+    #cv2.imshow('Sample',cv2.resize(cv2.imread(file_path),(640,480)))
+    im = np.expand_dims(im, axis=0)
+    
+    #Checking if model is present in the Directory
+    if(glob.glob('*.h5')):
+        for filename in glob.glob('*.h5'):
+            model=load_model(filename)
+            print('Model Loaded')
+    else:
+        print('Model Not found, Creating a new M')
+        model=create_cnn('classifier.h5')
+    
+    #Compiling the model and predicting Output
+    model.compile(optimizer=optimizers.RMSprop(lr=0.0004),loss='categorical_crossentropy',metrics=['accuracy'])
+    out=model.predict(im)
+    
+    if out[0][0]==1:
+        prediction='class1'
+    elif out[0][0]==2:
+        prediction='Class2'
+    elif out[0][0]==3:
+        prediction='Class3'
+    else:
+        prediction=='Class4'
+    print(prediction)
+    
