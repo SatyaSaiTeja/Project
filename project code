@@ -35,7 +35,7 @@ def create_cnn(model_path=None):
     classifier.add(Dropout(0.5))
     classifier.add(Dense(output_dim=128,activation='relu'))
     classifier.add(Dropout(0.5))
-    classifier.add(Dense(output_dim=1,activation='sigmoid'))
+    classifier.add(Dense(output_dim=4,activation='softmax'))
 
     #compliling CNN important to remem loss fun and optimizer
     classifier.compile(optimizer=optimizers.RMSprop(lr=0.0004),loss='categorical_crossentropy',metrics=['accuracy'])
@@ -79,7 +79,7 @@ def create_cnn(model_path=None):
 
 if __name__ == "__main__":
     #Opening the image for prediction
-    file_path='C:\\Users\\Satya Karuturi\\Documents\\GitHub\\elpv-dataset\\Im2\\cell0005.png',
+    file_path='C:\\Users\\Satya Karuturi\\Documents\\GitHub\\elpv-dataset\\Im2\\cell0001.png',
     im=cv2.resize(cv2.imread(file_path),(64,64)).astype(np.float32)
     #cv2.imshow('Sample',cv2.resize(cv2.imread(file_path),(640,480)))
     im = np.expand_dims(im, axis=0)
